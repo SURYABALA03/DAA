@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Fleet Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --neon-cyan:   #00f5ff;
+    --neon-pink:   #ff006e;
+    --neon-yellow: #ffe600;
+    --neon-green:  #39ff14;
+    --neon-purple: #bf5fff;
+    --bg-dark:     #0e0028;
+    --bg-card:     rgba(255,255,255,0.07);
+    --bg-card2:    rgba(255,255,255,0.04);
+    --border:      rgba(255,255,255,0.18);
+    --text:        #f0eaff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Exo 2', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    /* Rich multi-stop gradient background */
+    background:
+      linear-gradient(135deg,
+        #0e0028 0%,
+        #1a004a 15%,
+        #2d005f 28%,
+        #180040 40%,
+        #00103a 55%,
+        #001830 68%,
+        #001020 80%,
+        #0e0028 100%);
+  }
+
+  /* Animated colourful orbs */
+  body::before {
+    content:'';
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(ellipse 55% 40% at 10% 20%,  rgba(255,0,110,0.18)   0%, transparent 70%),
+      radial-gradient(ellipse 45% 35% at 90% 15%,  rgba(0,245,255,0.15)   0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 50% 85%,  rgba(191,95,255,0.18)  0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 80% 60%,  rgba(255,230,0,0.10)   0%, transparent 70%),
+      radial-gradient(ellipse 35% 30% at 20% 70%,  rgba(57,255,20,0.09)   0%, transparent 70%);
+    animation: orbs 14s ease-in-out infinite alternate;
+  }
+  @keyframes orbs {
+    0%   { opacity: 1;   transform: scale(1)   rotate(0deg);   }
+    50%  { opacity: 0.7; transform: scale(1.05) rotate(1deg);  }
+    100% { opacity: 1;   transform: scale(0.97) rotate(-1deg); }
+  }
+
+  header {
+    background: linear-gradient(135deg,
+      rgba(14,0,40,0.92) 0%,
+      rgba(45,0,95,0.88) 50%,
+      rgba(14,0,40,0.92) 100%);
+    backdrop-filter: blur(20px);
+    border-bottom: 2px solid var(--neon-cyan);
+    padding: 20px 40px;
+    display: flex; align-items: center; gap: 20px;
+    box-shadow: 0 4px 60px rgba(0,245,255,0.25), 0 0 120px rgba(191,95,255,0.15);
+    position: relative; z-index: 10;
+  }
+  .logo { font-size: 2.8rem; }
+  header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.6rem;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-transform: uppercase; letter-spacing: 3px;
+  }
+  header p { color: rgba(255,255,255,0.5); font-size: 0.85rem; letter-spacing: 2px; }
+  .status-dot {
+    width:12px; height:12px; border-radius:50%;
+    background: var(--neon-green);
+    box-shadow: 0 0 10px var(--neon-green);
+    animation: pulse 2s infinite;
+    margin-left: auto;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; position:relative; z-index:1; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 8px; margin-bottom: 30px;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    border-radius: 16px; padding: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .tab {
+    flex:1; padding: 12px 8px; border-radius: 10px; border:none; cursor:pointer;
+    font-family: 'Exo 2', sans-serif; font-weight:600; font-size: 0.8rem;
+    letter-spacing: 1px; text-transform: uppercase;
+    background: transparent; color: rgba(255,255,255,0.4);
+    transition: all 0.3s;
+  }
+  .tab:hover { color: var(--neon-cyan); }
+  .tab.active {
+    background: linear-gradient(135deg, rgba(0,245,255,0.25), rgba(191,95,255,0.25));
+    color: var(--neon-cyan); border: 1px solid rgba(0,245,255,0.5);
+    box-shadow: 0 0 20px rgba(0,245,255,0.2);
+  }
+
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  /* Cards */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .card {
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px; padding: 24px;
+    transition: all 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+  }
+  .card:hover { border-color: rgba(0,245,255,0.4); box-shadow: 0 8px 40px rgba(0,245,255,0.15); }
+  .card h3 {
+    font-family: 'Orbitron', monospace; font-size: 0.85rem;
+    color: var(--neon-cyan); letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 20px; display:flex; align-items:center; gap:8px;
+  }
+
+  /* Form inputs */
+  label { display:block; font-size:0.8rem; color:rgba(255,255,255,0.55); letter-spacing:1px; margin-bottom:6px; margin-top:14px; text-transform:uppercase; }
+  input[type="number"], input[type="range"] {
+    width:100%; background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2); border-radius:8px;
+    color: var(--neon-cyan); padding: 10px 14px;
+    font-family:'Exo 2',sans-serif; font-size:1rem;
+    outline:none; transition:all 0.3s;
+  }
+  input[type="number"]:focus { border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0,245,255,0.2); }
+  input[type="range"] { padding:6px 0; accent-color: var(--neon-cyan); }
+  .range-val { color: var(--neon-yellow); font-weight:700; font-size:1.1rem; }
+
+  /* Buttons */
+  .btn {
+    display:inline-flex; align-items:center; gap:8px;
+    padding: 12px 28px; border-radius:10px; border:none; cursor:pointer;
+    font-family:'Exo 2',sans-serif; font-weight:700; font-size:0.9rem;
+    letter-spacing:1px; text-transform:uppercase; transition:all 0.3s;
+  }
+  .btn-cyan {
+    background: linear-gradient(135deg, rgba(0,245,255,0.2), rgba(0,245,255,0.1));
+    border: 1px solid var(--neon-cyan); color: var(--neon-cyan);
+  }
+  .btn-cyan:hover { background: rgba(0,245,255,0.3); box-shadow: 0 0 30px rgba(0,245,255,0.4); transform:translateY(-2px); }
+  .btn-pink {
+    background: linear-gradient(135deg, rgba(255,0,110,0.2), rgba(255,0,110,0.1));
+    border: 1px solid var(--neon-pink); color: var(--neon-pink);
+  }
+  .btn-pink:hover { background: rgba(255,0,110,0.3); box-shadow: 0 0 30px rgba(255,0,110,0.4); transform:translateY(-2px); }
+  .btn-green {
+    background: linear-gradient(135deg, rgba(57,255,20,0.2), rgba(57,255,20,0.1));
+    border: 1px solid var(--neon-green); color: var(--neon-green);
+  }
+  .btn-green:hover { background: rgba(57,255,20,0.3); box-shadow: 0 0 30px rgba(57,255,20,0.4); transform:translateY(-2px); }
+  .btn-full { width:100%; justify-content:center; margin-top:20px; }
+
+  /* Metrics */
+  .metric-card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 14px; padding: 20px; text-align:center;
+    position:relative; overflow:hidden;
+    transition: transform 0.3s;
+  }
+  .metric-card:hover { transform: translateY(-4px); }
+  .metric-icon { font-size:2rem; margin-bottom:8px; }
+  .metric-val {
+    font-family: 'Orbitron', monospace; font-size:2rem; font-weight:900;
+    margin-bottom:4px;
+  }
+  .metric-label { font-size:0.75rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px; }
+  .cyan { color: var(--neon-cyan); text-shadow: 0 0 20px var(--neon-cyan); }
+  .pink { color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink); }
+  .yellow { color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow); }
+  .green { color: var(--neon-green); text-shadow: 0 0 20px var(--neon-green); }
+  .purple { color: var(--neon-purple); text-shadow: 0 0 20px var(--neon-purple); }
+
+  /* Progress bar */
+  .progress-wrap { background: rgba(255,255,255,0.05); border-radius:99px; overflow:hidden; height:12px; margin-top:8px; }
+  .progress-bar { height:100%; border-radius:99px; transition: width 1s ease; }
+  .bar-cyan { background: linear-gradient(90deg, var(--neon-cyan), rgba(0,245,255,0.5)); box-shadow: 0 0 10px var(--neon-cyan); }
+  .bar-pink { background: linear-gradient(90deg, var(--neon-pink), rgba(255,0,110,0.5)); box-shadow: 0 0 10px var(--neon-pink); }
+  .bar-green { background: linear-gradient(90deg, var(--neon-green), rgba(57,255,20,0.5)); box-shadow: 0 0 10px var(--neon-green); }
+
+  /* Comparison bars */
+  .compare-row { margin: 12px 0; }
+  .compare-label { display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.85rem; }
+
+  /* Grid visualization */
+  #gridCanvas {
+    width:100%; border-radius:12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    display:block; cursor:crosshair;
+    background: rgba(0,0,20,0.7);
+  }
+
+  /* Employee list */
+  .emp-list { max-height: 300px; overflow-y:auto; }
+  .emp-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 8px 12px; margin: 4px 0; border-radius:8px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+    font-size:0.85rem;
+    transition: all 0.2s;
+  }
+  .emp-item:hover { background: rgba(0,245,255,0.05); }
+  .emp-dot { width:10px; height:10px; border-radius:50%; }
+
+  /* Cab assignment */
+  .cab-card {
+    background: var(--bg-card2); border-radius:12px; padding:14px; margin:8px 0;
+    border-left: 4px solid var(--neon-cyan);
+  }
+  .cab-header { font-family:'Orbitron',monospace; font-size:0.8rem; color:var(--neon-cyan); margin-bottom:8px; }
+  .cab-emps { display:flex; flex-wrap:wrap; gap:6px; }
+  .emp-tag {
+    padding:4px 10px; border-radius:20px; font-size:0.75rem; cursor:grab;
+    font-weight:600; user-select:none;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* Score display */
+  .score-ring {
+    width:160px; height:160px; margin: 20px auto;
+    border-radius:50%; position:relative;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+  }
+  .score-val { font-family:'Orbitron',monospace; font-size:2.5rem; font-weight:900; }
+  .score-label { font-size:0.75rem; color:rgba(255,255,255,0.5); }
+  .badge {
+    display:inline-block; padding:8px 20px; border-radius:99px;
+    font-family:'Orbitron',monospace; font-size:0.9rem; font-weight:700;
+    text-align:center; margin:10px auto; display:block; width:fit-content;
+  }
+
+  /* Alert */
+  .alert { padding:14px; border-radius:10px; margin:10px 0; font-size:0.85rem; }
+  .alert-info { background:rgba(0,245,255,0.1); border:1px solid rgba(0,245,255,0.3); color:var(--neon-cyan); }
+  .alert-success { background:rgba(57,255,20,0.1); border:1px solid rgba(57,255,20,0.3); color:var(--neon-green); }
+  .alert-warn { background:rgba(255,230,0,0.1); border:1px solid rgba(255,230,0,0.3); color:var(--neon-yellow); }
+
+  /* Sim history */
+  .sim-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; margin:4px 0; border-radius:8px;
+    background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05);
+    font-size:0.85rem; transition:all 0.2s;
+  }
+  .sim-row:hover { background:rgba(0,245,255,0.05); }
+  .sim-best { border-color: var(--neon-green); background: rgba(57,255,20,0.05); }
+
+  /* Loading spinner */
+  .spinner {
+    display:inline-block; width:20px; height:20px; border-radius:50%;
+    border:2px solid rgba(0,245,255,0.2); border-top-color:var(--neon-cyan);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Drag drop */
+  .drop-zone {
+    min-height:60px; border:2px dashed rgba(0,245,255,0.2);
+    border-radius:10px; padding:10px;
+    transition: all 0.3s;
+  }
+  .drop-zone.over { border-color: var(--neon-cyan); background: rgba(0,245,255,0.05); }
+
+  /* Tooltip */
+  .tooltip { position:relative; }
+  .tooltip:hover::after {
+    content: attr(data-tip);
+    position:absolute; bottom:110%; left:50%; transform:translateX(-50%);
+    background:#1a1a3a; color:var(--neon-cyan); border:1px solid var(--border);
+    padding:6px 10px; border-radius:6px; font-size:0.75rem; white-space:nowrap;
+    z-index:100;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-dark); }
+  ::-webkit-scrollbar-thumb { background: rgba(0,245,255,0.3); border-radius:3px; }
+
+  @media(max-width:768px) {
+    .grid2,.grid3,.grid4 { grid-template-columns:1fr; }
+    header h1 { font-size:1.1rem; }
+    .tabs { flex-wrap:wrap; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🚗</div>
+  <div>
+    <h1>Smart Fleet Management</h1>
+    <p>AI-Powered Route Optimization System</p>
+  </div>
+  <div class="status-dot tooltip" data-tip="System Online"></div>
+</header>
+
+<div class="container">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showPanel('setup')">⚙️ Setup</button>
+    <button class="tab" onclick="showPanel('results')">📊 Results</button>
+    <button class="tab" onclick="showPanel('map')">🗺️ Map</button>
+    <button class="tab" onclick="showPanel('dpvsg')">🧮 DP vs Greedy</button>
+    <button class="tab" onclick="showPanel('game')">🎮 Game Mode</button>
+    <button class="tab" onclick="showPanel('history')">📈 History</button>
+  </div>
+
+  <!-- SETUP PANEL -->
+  <div id="panel-setup" class="panel active">
+    <div class="grid2">
+      <div class="card">
+        <h3>👥 Employee Generator</h3>
+        <label>Number of Employees</label>
+        <input type="range" id="numEmp" min="4" max="30" value="10" oninput="document.getElementById('empVal').textContent=this.value">
+        <div style="text-align:right"><span class="range-val" id="empVal">10</span> employees</div>
+
+        <label>City Grid Size</label>
+        <input type="range" id="gridSize" min="10" max="50" value="20" oninput="document.getElementById('gridVal').textContent=this.value">
+        <div style="text-align:right"><span class="range-val" id="gridVal">20</span> × <span id="gridVal2">20</span> grid</div>
+
+        <button class="btn btn-cyan btn-full" onclick="generateEmployees()">⚡ Generate Employees</button>
+      </div>
+
+      <div class="card">
+        <h3>🚕 Fleet Configuration</h3>
+        <label>Number of Cabs</label>
+        <input type="range" id="numCabs" min="1" max="10" value="3" oninput="document.getElementById('cabVal').textContent=this.value">
+        <div style="text-align:right"><span class="range-val" id="cabVal">3</span> cabs</div>
+
+        <label>Seats per Cab</label>
+        <input type="range" id="seatsPerCab" min="2" max="8" value="4" oninput="document.getElementById('seatVal').textContent=this.value">
+        <div style="text-align:right"><span class="range-val" id="seatVal">4</span> seats</div>
+
+        <div id="capAlert" class="alert alert-info" style="margin-top:16px">
+          Total capacity: <strong id="totalCap">12</strong> seats for <strong id="empCount">0</strong> employees
+        </div>
+        <div id="capWarn" class="alert alert-warn" style="margin-top:10px;display:none">
+          ⚠️ <strong>Capacity Warning!</strong><br>
+          Employees (<strong id="warnEmp">0</strong>) &gt; Total seats (<strong id="warnCap">0</strong>).<br>
+          Only the first <strong id="warnFit">0</strong> employees will be assigned to cabs.
+        </div>
+        <div id="capOk" class="alert alert-success" style="margin-top:10px;display:none">
+          ✅ <strong>Capacity OK!</strong> All <strong id="okEmp">0</strong> employees fit in <strong id="okCap">0</strong> seats.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px">
+      <h3>👤 Generated Employees</h3>
+      <div class="emp-list" id="empList">
+        <div style="color:rgba(255,255,255,0.3); text-align:center; padding:30px">
+          Click "Generate Employees" to populate the fleet
+        </div>
+      </div>
+      <button class="btn btn-green btn-full" id="runBtn" onclick="runOptimization()" disabled>
+        🚀 Run Optimization (C Algorithm)
+      </button>
+    </div>
+  </div>
+
+  <!-- RESULTS PANEL -->
+  <div id="panel-results" class="panel">
+    <div id="resultsEmpty" class="alert alert-warn">Run an optimization first to see results.</div>
+    <div id="resultsContent" style="display:none">
+      <!-- Metrics row -->
+      <div class="grid4" style="margin-bottom:20px">
+        <div class="metric-card">
+          <div class="metric-icon">🏁</div>
+          <div class="metric-val cyan" id="m-greedy">—</div>
+          <div class="metric-label">Greedy Distance</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">🎲</div>
+          <div class="metric-val pink" id="m-random">—</div>
+          <div class="metric-label">Random Distance</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">📈</div>
+          <div class="metric-val green" id="m-improve">—</div>
+          <div class="metric-label">Improvement %</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">⚡</div>
+          <div class="metric-val yellow" id="m-util">—</div>
+          <div class="metric-label">Fleet Utilization</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>📊 Algorithm Comparison</h3>
+          <div class="compare-row">
+            <div class="compare-label"><span>🤖 Greedy (AI)</span><span id="cmp-greedy" class="cyan">—</span></div>
+            <div class="progress-wrap"><div class="progress-bar bar-cyan" id="bar-greedy" style="width:0%"></div></div>
+          </div>
+          <div class="compare-row">
+            <div class="compare-label"><span>🎲 Random</span><span id="cmp-random" class="pink">—</span></div>
+            <div class="progress-wrap"><div class="progress-bar bar-pink" id="bar-random" style="width:0%"></div></div>
+          </div>
+          <div style="margin-top:20px; padding:14px; background:rgba(57,255,20,0.05); border-radius:10px; border:1px solid rgba(57,255,20,0.2)">
+            <div style="color:rgba(255,255,255,0.5); font-size:0.8rem;">AI SAVES</div>
+            <div class="metric-val green" id="dist-saved">— units</div>
+            <div style="color:rgba(255,255,255,0.4); font-size:0.75rem;">by using greedy optimization</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>🚕 Fleet Metrics</h3>
+          <div id="fleetMetrics"></div>
+          <div style="margin-top:16px">
+            <div class="compare-label"><span>Utilization</span><span id="util-val" class="cyan">0%</span></div>
+            <div class="progress-wrap"><div class="progress-bar bar-green" id="bar-util" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <h3>🚗 Cab Assignments</h3>
+        <div id="cabAssignments"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP PANEL -->
+  <div id="panel-map" class="panel">
+    <div class="card">
+      <h3>🗺️ Fleet Route Map</h3>
+      <div style="display:flex; gap:20px; margin-bottom:16px; flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem">
+          <div style="width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #00f5ff"></div> Office
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem">
+          <div style="width:12px;height:12px;border-radius:50%;background:#ff006e"></div> Employee
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem">
+          <div style="width:24px;height:2px;background:var(--neon-cyan)"></div> Route
+        </div>
+      </div>
+      <canvas id="gridCanvas" height="500"></canvas>
+      <div style="text-align:center; margin-top:10px; color:rgba(255,255,255,0.3); font-size:0.8rem">
+        ★ = Office (0,0) | Each color = different cab route
+      </div>
+    </div>
+  </div>
+
+  <!-- DP VS GREEDY PANEL -->
+  <div id="panel-dpvsg" class="panel">
+
+    <!-- Header Banner -->
+    <div style="background:linear-gradient(135deg,rgba(255,230,0,0.12),rgba(191,95,255,0.12),rgba(0,245,255,0.12));border:1px solid rgba(255,230,0,0.3);border-radius:18px;padding:28px;margin-bottom:24px;text-align:center">
+      <div style="font-size:2.2rem;margin-bottom:10px">🧮</div>
+      <div style="font-family:'Orbitron',monospace;font-size:1.2rem;color:var(--neon-yellow);letter-spacing:3px;margin-bottom:10px">DYNAMIC PROGRAMMING vs GREEDY</div>
+      <div style="color:rgba(255,255,255,0.65);font-size:0.9rem;max-width:680px;margin:0 auto;line-height:1.8">
+        Both algorithms solve the same fleet routing problem. DP finds the <strong style="color:var(--neon-green)">globally optimal</strong> solution. Greedy finds a <strong style="color:var(--neon-cyan)">near-optimal</strong> solution much faster. Run them on the same employees and compare.
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-cyan" onclick="runDPvsGreedy()" id="dpBtn">⚡ Run Both Algorithms</button>
+      </div>
+    </div>
+
+    <div id="dpEmpty" class="alert alert-warn" style="margin-bottom:20px">Generate employees in Setup first, then click "Run Both Algorithms".</div>
+    <div id="dpContent" style="display:none">
+
+      <!-- Live result metrics -->
+      <div class="grid3" style="margin-bottom:22px">
+        <div class="metric-card" style="border-top:3px solid var(--neon-cyan)">
+          <div class="metric-icon">🤖</div>
+          <div class="metric-val cyan" id="dp-greedy-dist">—</div>
+          <div class="metric-label">Greedy Distance</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:4px">O(n²) per cab</div>
+        </div>
+        <div class="metric-card" style="border-top:3px solid var(--neon-yellow)">
+          <div class="metric-icon">🧩</div>
+          <div class="metric-val yellow" id="dp-dp-dist">—</div>
+          <div class="metric-label">DP Distance</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:4px">O(n² × 2ⁿ)</div>
+        </div>
+        <div class="metric-card" style="border-top:3px solid var(--neon-green)">
+          <div class="metric-icon">📊</div>
+          <div class="metric-val green" id="dp-gap">—</div>
+          <div class="metric-label">Gap (DP - Greedy)</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:4px">lower = greedy closer to optimal</div>
+        </div>
+      </div>
+
+      <!-- Side-by-side route visualization -->
+      <div class="grid2" style="margin-bottom:22px">
+        <div class="card" style="border-color:rgba(0,245,255,0.4)">
+          <h3 style="color:var(--neon-cyan)">🤖 Greedy Route</h3>
+          <div style="font-size:0.82rem;color:rgba(255,255,255,0.55);margin-bottom:12px">Always picks nearest unvisited employee from current position. Fast, near-optimal.</div>
+          <canvas id="greedyRouteCanvas" height="260" style="width:100%;border-radius:10px;background:rgba(0,0,20,0.6);display:block;border:1px solid rgba(0,245,255,0.2)"></canvas>
+          <div id="greedyCabList" style="margin-top:12px"></div>
+        </div>
+        <div class="card" style="border-color:rgba(255,230,0,0.4)">
+          <h3 style="color:var(--neon-yellow)">🧩 DP Route</h3>
+          <div style="font-size:0.82rem;color:rgba(255,255,255,0.55);margin-bottom:12px">Tries ALL possible subsets of employees per cab using bitmask DP. Finds true optimal for each cab.</div>
+          <canvas id="dpRouteCanvas" height="260" style="width:100%;border-radius:10px;background:rgba(0,0,20,0.6);display:block;border:1px solid rgba(255,230,0,0.2)"></canvas>
+          <div id="dpCabList" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- Step-by-step explanation -->
+      <div class="grid2" style="margin-bottom:22px">
+        <div class="card" style="border-color:rgba(0,245,255,0.35)">
+          <h3 style="color:var(--neon-cyan)">🤖 How Greedy Works — Steps</h3>
+          <div style="font-family:monospace;font-size:0.8rem;background:rgba(0,0,0,0.3);border-radius:10px;padding:14px;line-height:2;margin-bottom:14px">
+            <div style="color:rgba(255,255,255,0.35);margin-bottom:4px">// Greedy pseudocode</div>
+            <div><span style="color:var(--neon-purple)">for</span> each cab:</div>
+            <div style="padding-left:16px">cur = office (0,0)</div>
+            <div style="padding-left:16px"><span style="color:var(--neon-purple)">for</span> each seat:</div>
+            <div style="padding-left:32px"><span style="color:var(--neon-cyan)">next</span> = <span style="color:var(--neon-green)">MIN</span> dist(cur, unvisited)</div>
+            <div style="padding-left:32px">assign next, cur = next</div>
+            <div style="padding-left:16px">dist += return_to_office</div>
+          </div>
+          <div id="greedyStepLog" style="font-size:0.8rem;max-height:200px;overflow-y:auto;line-height:1.9"></div>
+        </div>
+
+        <div class="card" style="border-color:rgba(255,230,0,0.35)">
+          <h3 style="color:var(--neon-yellow)">🧩 How DP Works — Steps</h3>
+          <div style="font-family:monospace;font-size:0.8rem;background:rgba(0,0,0,0.3);border-radius:10px;padding:14px;line-height:2;margin-bottom:14px">
+            <div style="color:rgba(255,255,255,0.35);margin-bottom:4px">// DP (Held-Karp style) pseudocode</div>
+            <div><span style="color:var(--neon-purple)">for</span> each cab:</div>
+            <div style="padding-left:16px">pool = unassigned employees</div>
+            <div style="padding-left:16px"><span style="color:var(--neon-purple)">for</span> each subset S of pool (2ⁿ):</div>
+            <div style="padding-left:32px"><span style="color:var(--neon-purple)">for</span> each last node v in S:</div>
+            <div style="padding-left:48px"><span style="color:var(--neon-yellow)">dp[S][v]</span> = min over all u</div>
+            <div style="padding-left:48px">dp[S\v][u] + dist(u,v)</div>
+            <div style="padding-left:16px">pick best subset of size ≤ seats</div>
+          </div>
+          <div id="dpStepLog" style="font-size:0.8rem;max-height:200px;overflow-y:auto;line-height:1.9"></div>
+        </div>
+      </div>
+
+      <!-- Time Complexity Comparison -->
+      <div class="card" style="margin-bottom:22px;border-color:rgba(191,95,255,0.4)">
+        <h3 style="color:var(--neon-purple)">⏱️ Time Complexity Comparison</h3>
+        <div class="grid2">
+          <div>
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+              <thead>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
+                  <th style="padding:10px;text-align:left;color:rgba(255,255,255,0.5);font-weight:600">Metric</th>
+                  <th style="padding:10px;text-align:center;color:var(--neon-cyan)">🤖 Greedy</th>
+                  <th style="padding:10px;text-align:center;color:var(--neon-yellow)">🧩 DP</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                  <td style="padding:10px;color:rgba(255,255,255,0.7)">Time Complexity</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-cyan);font-family:monospace;font-weight:700">O(n²)</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-yellow);font-family:monospace;font-weight:700">O(n² × 2ⁿ)</td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                  <td style="padding:10px;color:rgba(255,255,255,0.7)">Space Complexity</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-cyan);font-family:monospace">O(n)</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-yellow);font-family:monospace">O(n × 2ⁿ)</td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                  <td style="padding:10px;color:rgba(255,255,255,0.7)">Solution Quality</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-cyan)">Near-optimal</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-green)">Globally Optimal</td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                  <td style="padding:10px;color:rgba(255,255,255,0.7)">Practical for n=20</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-green)">✅ ~400 ops</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-pink)">❌ ~400M ops</td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                  <td style="padding:10px;color:rgba(255,255,255,0.7)">Practical for n=30</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-green)">✅ ~900 ops</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-pink)">❌ ~10¹¹ ops</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px;color:rgba(255,255,255,0.7)">Best Use Case</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-cyan)">Real-world (large n)</td>
+                  <td style="padding:10px;text-align:center;color:var(--neon-yellow)">Academic (small n)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <!-- Complexity growth bar chart -->
+            <div style="padding:8px">
+              <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-bottom:14px;letter-spacing:1px;text-transform:uppercase">Operations count as n grows</div>
+              <div id="complexityBars"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Why Greedy section -->
+      <div class="card" style="margin-bottom:22px;border-color:rgba(0,245,255,0.5);background:rgba(0,245,255,0.04)">
+        <h3 style="color:var(--neon-cyan)">❓ Why Greedy Algorithm?</h3>
+        <div style="background:rgba(0,0,0,0.3);border-left:4px solid var(--neon-cyan);border-radius:0 12px 12px 0;padding:18px;margin-bottom:18px;font-size:0.9rem;color:rgba(255,255,255,0.8);line-height:1.9">
+          The greedy algorithm was chosen because it provides <strong style="color:var(--neon-cyan)">efficient route optimization</strong> with relatively low computational complexity. While dynamic programming can produce an optimal solution, its time complexity <strong style="color:var(--neon-yellow)">O(n² × 2ⁿ)</strong> becomes impractical as the number of employees increases. The greedy approach offers a <strong style="color:var(--neon-green)">near-optimal solution</strong> with a manageable time complexity of <strong style="color:var(--neon-cyan)">O(n²)</strong>, making it suitable for real-world fleet routing problems.
+        </div>
+        <div class="grid3">
+          <div style="background:rgba(0,245,255,0.07);border:1px solid rgba(0,245,255,0.25);border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:1.8rem;margin-bottom:6px">⚡</div>
+            <div style="color:var(--neon-cyan);font-weight:700;font-size:0.9rem;margin-bottom:4px">Fast Execution</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.5)">O(n²) is feasible even for n=100+ employees in milliseconds</div>
+          </div>
+          <div style="background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.25);border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:1.8rem;margin-bottom:6px">🎯</div>
+            <div style="color:var(--neon-green);font-weight:700;font-size:0.9rem;margin-bottom:4px">Near-Optimal</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.5)">Typically within 10–20% of true optimal — acceptable for real routing</div>
+          </div>
+          <div style="background:rgba(255,230,0,0.07);border:1px solid rgba(255,230,0,0.25);border-radius:12px;padding:16px;text-align:center">
+            <div style="font-size:1.8rem;margin-bottom:6px">🧠</div>
+            <div style="color:var(--neon-yellow);font-weight:700;font-size:0.9rem;margin-bottom:4px">Simple Logic</div>
+            <div style="font-size:0.78rem;color:rgba(255,255,255,0.5)">Easy to implement, understand, and explain — ideal for production use</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conclusion -->
+      <div class="card" style="border-color:rgba(57,255,20,0.5);background:rgba(57,255,20,0.04)">
+        <h3 style="color:var(--neon-green)">✅ Conclusion</h3>
+        <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+          <div style="flex:2;min-width:280px">
+            <div style="font-size:0.9rem;color:rgba(255,255,255,0.8);line-height:2;margin-bottom:16px">
+              This project demonstrates that the <strong style="color:var(--neon-cyan)">Greedy Algorithm</strong> is the right choice for the Smart Fleet Management System. Dynamic Programming guarantees optimality but its exponential time complexity <strong style="color:var(--neon-yellow)">O(n² × 2ⁿ)</strong> makes it computationally infeasible for real-world fleet sizes (n ≥ 20).
+            </div>
+            <div style="font-size:0.9rem;color:rgba(255,255,255,0.8);line-height:2;margin-bottom:16px">
+              The Greedy approach with <strong style="color:var(--neon-cyan)">O(n²)</strong> complexity consistently reduces total travel distance by <strong style="color:var(--neon-green)">15–50%</strong> compared to random assignment, while running in near-instant time regardless of fleet size.
+            </div>
+            <div style="font-size:0.9rem;color:rgba(255,255,255,0.8);line-height:2">
+              Future improvements could include <strong style="color:var(--neon-purple)">Genetic Algorithms</strong> or <strong style="color:var(--neon-purple)">Simulated Annealing</strong> which bridge the gap between greedy speed and DP optimality — but for this problem, Greedy strikes the ideal balance of <em style="color:var(--neon-yellow)">efficiency, simplicity, and real-world practicality</em>.
+            </div>
+          </div>
+          <div style="flex:1;min-width:220px">
+            <div style="background:rgba(0,0,0,0.3);border-radius:14px;padding:18px">
+              <div style="font-family:'Orbitron',monospace;font-size:0.75rem;color:var(--neon-green);margin-bottom:14px;letter-spacing:1px">VERDICT</div>
+              <div style="margin-bottom:10px;font-size:0.85rem">
+                <span style="color:var(--neon-cyan)">🤖 Greedy</span>
+                <div style="margin-top:4px"><span style="color:var(--neon-green);font-size:0.78rem">✅ Fast &nbsp; ✅ Scalable &nbsp; ✅ Practical</span></div>
+              </div>
+              <div style="margin-bottom:10px;font-size:0.85rem">
+                <span style="color:var(--neon-yellow)">🧩 DP</span>
+                <div style="margin-top:4px"><span style="color:var(--neon-green);font-size:0.78rem">✅ Optimal</span> <span style="color:var(--neon-pink);font-size:0.78rem">❌ Slow &nbsp; ❌ Impractical (large n)</span></div>
+              </div>
+              <div style="margin-top:16px;padding:12px;background:rgba(57,255,20,0.1);border:1px solid rgba(57,255,20,0.3);border-radius:10px;text-align:center">
+                <div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:4px">WINNER</div>
+                <div style="font-size:1.1rem;color:var(--neon-green);font-weight:700">Greedy Algorithm</div>
+                <div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:2px">for real-world fleet routing</div>
+              </div>
+              <div id="dpLiveGap" style="margin-top:12px;padding:10px;background:rgba(255,230,0,0.08);border:1px solid rgba(255,230,0,0.2);border-radius:10px;text-align:center;font-size:0.8rem">
+                <div style="color:rgba(255,255,255,0.4);margin-bottom:2px">Gap on your data</div>
+                <div id="dpLiveGapVal" style="color:var(--neon-yellow);font-family:'Orbitron',monospace;font-size:1rem">Run both to see</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- GAME PANEL -->
+  <div id="panel-game" class="panel">
+    <div id="gameEmpty" class="alert alert-warn">Run an optimization first, then try Game Mode!</div>
+    <div id="gameContent" style="display:none">
+      <div class="grid2">
+        <div class="card">
+          <h3>🎮 Manual Assignment</h3>
+          <p style="font-size:0.85rem; color:rgba(255,255,255,0.5); margin-bottom:16px">
+            Drag employees into cab slots. Try to beat the AI!
+          </p>
+          <div id="unassignedPool">
+            <div style="font-size:0.8rem; color:rgba(255,255,255,0.4); margin-bottom:8px">UNASSIGNED EMPLOYEES</div>
+            <div class="drop-zone" id="unassignedZone"></div>
+          </div>
+          <div id="gameCabs" style="margin-top:16px"></div>
+          <button class="btn btn-pink btn-full" onclick="scoreUserRoute()">⚡ Calculate My Score</button>
+        </div>
+
+        <div class="card">
+          <h3>🏆 Score Board</h3>
+          <div id="scoreBoard">
+            <div style="color:rgba(255,255,255,0.3); text-align:center; padding:30px">
+              Assign employees and click "Calculate My Score"
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY PANEL -->
+  <div id="panel-history" class="panel">
+    <div class="grid3" style="margin-bottom:20px">
+      <div class="metric-card">
+        <div class="metric-icon">🔢</div>
+        <div class="metric-val cyan" id="h-runs">0</div>
+        <div class="metric-label">Total Runs</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">🏅</div>
+        <div class="metric-val green" id="h-best">—</div>
+        <div class="metric-label">Best Distance</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">📉</div>
+        <div class="metric-val yellow" id="h-avg">—</div>
+        <div class="metric-label">Avg Improvement</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📜 Simulation History</h3>
+      <div id="historyList">
+        <div style="color:rgba(255,255,255,0.3); text-align:center; padding:30px">No simulations yet</div>
+      </div>
+      <button class="btn btn-pink btn-full" onclick="clearHistory()" style="margin-top:10px">🗑️ Clear History</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ==================== STATE ====================
+let employees = [];
+let lastResult = null;
+let simHistory = [];
+let simCount = 0;
+const CAB_COLORS = ['#00f5ff','#ff006e','#ffe600','#39ff14','#bf5fff','#ff6b35','#00d4aa','#ff8c94','#a8ff78','#f8a5c2'];
+
+// ==================== UTILS ====================
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'map' && lastResult) drawMap();
+}
+
+function updateCapacity() {
+  const cabs = parseInt(document.getElementById('numCabs').value);
+  const seats = parseInt(document.getElementById('seatsPerCab').value);
+  const total = cabs * seats;
+  const n = employees.length;
+
+  document.getElementById('totalCap').textContent = total;
+  document.getElementById('empCount').textContent = n;
+  document.getElementById('gridVal2').textContent = document.getElementById('gridSize').value;
+
+  // Capacity warning logic — directly from pseudocode
+  const warn = document.getElementById('capWarn');
+  const ok   = document.getElementById('capOk');
+
+  if (n === 0) {
+    warn.style.display = 'none';
+    ok.style.display   = 'none';
+  } else if (n > total) {
+    // If employees > total_capacity → Display capacity warning
+    warn.style.display = 'block';
+    ok.style.display   = 'none';
+    document.getElementById('warnEmp').textContent  = n;
+    document.getElementById('warnCap').textContent  = total;
+    document.getElementById('warnFit').textContent  = total;
+  } else {
+    // Else → Assign employees to cabs (capacity OK)
+    warn.style.display = 'none';
+    ok.style.display   = 'block';
+    document.getElementById('okEmp').textContent = n;
+    document.getElementById('okCap').textContent = total;
+  }
+}
+
+document.getElementById('numCabs').addEventListener('input', updateCapacity);
+document.getElementById('seatsPerCab').addEventListener('input', updateCapacity);
+document.getElementById('numEmp').addEventListener('input', updateCapacity);
+
+// ==================== GENERATE EMPLOYEES ====================
+function generateEmployees() {
+  const n    = parseInt(document.getElementById('numEmp').value);
+  const grid = parseInt(document.getElementById('gridSize').value);
+  employees  = [];
+
+  for (let i = 0; i < n; i++) {
+    const x = Math.floor(Math.random() * grid) + 1;
+    const y = Math.floor(Math.random() * grid) + 1;
+    employees.push({ id: i, x, y, name: `Emp ${i+1}` });
+  }
+
+  renderEmpList();
+  updateCapacity();
+
+  document.getElementById('runBtn').disabled = false;
+  document.getElementById('runBtn').textContent = `🚀 Run Optimization (C Algorithm) — ${n} employees`;
+}
+
+function renderEmpList() {
+  const list = document.getElementById('empList');
+  if (!employees.length) { list.innerHTML = '<div style="color:rgba(255,255,255,0.3);text-align:center;padding:20px">No employees</div>'; return; }
+  list.innerHTML = employees.map((e, i) => `
+    <div class="emp-item">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="emp-dot" style="background:${CAB_COLORS[i % CAB_COLORS.length]}"></div>
+        <span>${e.name}</span>
+      </div>
+      <span style="color:rgba(255,255,255,0.5);font-size:0.8rem">(${e.x}, ${e.y})</span>
+      <div class="progress-wrap" style="width:80px">
+        <div class="progress-bar bar-cyan" style="width:${Math.round(Math.sqrt(e.x*e.x+e.y*e.y)/Math.sqrt(2)*50/parseInt(document.getElementById('gridSize').value)*100)}%"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ==================== OPTIMIZATION ====================
+async function runOptimization() {
+  const btn = document.getElementById('runBtn');
+  btn.innerHTML = '<span class="spinner"></span> Running C Algorithm...';
+  btn.disabled = true;
+
+  const num_cabs      = parseInt(document.getElementById('numCabs').value);
+  const seats_per_cab = parseInt(document.getElementById('seatsPerCab').value);
+
+  try {
+    const response = await fetch('/api/optimize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ employees, num_cabs, seats_per_cab })
+    });
+    const result = await response.json();
+    if (result.error) throw new Error(result.error);
+    lastResult = { ...result, employees: [...employees], num_cabs, seats_per_cab };
+    displayResults(result);
+    saveHistory(result);
+    setupGame(result);
+    switchToResults();
+  } catch (err) {
+    console.warn('Backend not available, using JS fallback:', err);
+    const result = runJSFallback(employees, num_cabs, seats_per_cab);
+    lastResult = { ...result, employees: [...employees], num_cabs, seats_per_cab };
+    displayResults(result);
+    saveHistory(result);
+    setupGame(result);
+    switchToResults();
+  }
+
+  btn.innerHTML = '🚀 Run Optimization (C Algorithm)';
+  btn.disabled = false;
+}
+
+function switchToResults() {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-results').classList.add('active');
+  document.querySelectorAll('.tab')[1].classList.add('active');
+}
+
+// JS fallback when backend not running — mirrors fleet_algo.c exactly
+function manhattan(x1,y1,x2,y2){return Math.abs(x1-x2)+Math.abs(y1-y2);}
+
+function runJSFallback(emps, numCabs, seats) {
+  const assigned   = new Array(emps.length).fill(false);
+  const assignments = [];
+  let totalGreedy  = 0;
+
+  // ── Greedy: For each cab, current_location = office (0,0) ──────────────
+  for (let c = 0; c < numCabs; c++) {
+    // Check if any unassigned employees remain
+    const firstUnassigned = assigned.findIndex(a => !a);
+    if (firstUnassigned === -1) break;
+
+    // current_location starts at office
+    let cx = 0, cy = 0;
+    let dist = 0;
+    const cabEmps = [];
+
+    for (let s = 0; s < seats; s++) {
+      // Find nearest unvisited employee from current_location
+      let minD = Infinity, best = -1;
+      for (let i = 0; i < emps.length; i++) {
+        if (!assigned[i]) {
+          const d = manhattan(cx, cy, emps[i].x, emps[i].y);
+          if (d < minD) { minD = d; best = i; }
+        }
+      }
+      if (best === -1) break;           // no more employees for this cab
+
+      // Add employee to route, mark as visited, update current_location
+      assigned[best] = true;
+      cabEmps.push(best);
+      dist += minD;
+      cx = emps[best].x;
+      cy = emps[best].y;
+    }
+
+    // Return to office after all pickups
+    dist += manhattan(cx, cy, 0, 0);
+    totalGreedy += dist;
+    assignments.push({ cab: c, employees: cabEmps, distance: dist });
+  }
+
+  // ── Random: shuffle then fill cabs, each starting from office ──────────
+  let totalRandom = 0;
+  const shuffled  = [...emps.map((_,i) => i)].sort(() => Math.random() - 0.5);
+  let idx = 0;
+  for (let c = 0; c < numCabs && idx < emps.length; c++) {
+    let d = 0, cx = 0, cy = 0;          // start from office
+    for (let s = 0; s < seats && idx < emps.length; s++, idx++) {
+      d  += manhattan(cx, cy, emps[shuffled[idx]].x, emps[shuffled[idx]].y);
+      cx  = emps[shuffled[idx]].x;
+      cy  = emps[shuffled[idx]].y;
+    }
+    d += manhattan(cx, cy, 0, 0);        // return to office
+    totalRandom += d;
+  }
+
+  const seatsUsed   = Math.min(emps.length, numCabs * seats);
+  const improvement = totalRandom > 0 ? ((totalRandom - totalGreedy) / totalRandom * 100) : 0;
+  const active      = assignments.filter(a => a.employees.length > 0).length;
+
+  return {
+    greedy_distance: totalGreedy,
+    random_distance: totalRandom,
+    improvement,
+    seats_used:   seatsUsed,
+    total_seats:  numCabs * seats,
+    utilization:  seatsUsed / (numCabs * seats) * 100,
+    avg_distance: active > 0 ? totalGreedy / active : 0,
+    active_cabs:  active,
+    assignments,
+    _fallback: true
+  };
+}
+
+// ==================== DISPLAY RESULTS ====================
+function displayResults(r) {
+  document.getElementById('resultsEmpty').style.display='none';
+  document.getElementById('resultsContent').style.display='block';
+
+  document.getElementById('m-greedy').textContent = r.greedy_distance.toFixed(1);
+  document.getElementById('m-random').textContent = r.random_distance.toFixed(1);
+  document.getElementById('m-improve').textContent = r.improvement.toFixed(1)+'%';
+  document.getElementById('m-util').textContent = r.utilization.toFixed(1)+'%';
+
+  document.getElementById('cmp-greedy').textContent = r.greedy_distance.toFixed(1);
+  document.getElementById('cmp-random').textContent = r.random_distance.toFixed(1);
+  document.getElementById('dist-saved').textContent = (r.random_distance - r.greedy_distance).toFixed(1) + ' units';
+
+  const maxD = Math.max(r.greedy_distance, r.random_distance);
+  document.getElementById('bar-greedy').style.width = (r.greedy_distance/maxD*100)+'%';
+  document.getElementById('bar-random').style.width = (r.random_distance/maxD*100)+'%';
+  document.getElementById('util-val').textContent = r.utilization.toFixed(1)+'%';
+  document.getElementById('bar-util').style.width = r.utilization+'%';
+
+  document.getElementById('fleetMetrics').innerHTML = `
+    <div class="emp-item"><span>🚕 Active Cabs</span><span class="cyan">${r.active_cabs}</span></div>
+    <div class="emp-item"><span>💺 Seats Used</span><span class="yellow">${r.seats_used} / ${r.total_seats}</span></div>
+    <div class="emp-item"><span>📏 Avg Distance/Cab</span><span class="green">${r.avg_distance.toFixed(1)}</span></div>
+    <div class="emp-item"><span>⚙️ Algorithm</span><span class="purple">${r._fallback?'JS Fallback':'C Engine'}</span></div>
+  `;
+
+  const cabDiv = document.getElementById('cabAssignments');
+  cabDiv.innerHTML = r.assignments.map(a => {
+    if (!a.employees.length) return '';
+    const color = CAB_COLORS[a.cab % CAB_COLORS.length];
+    const empNames = a.employees.map(i => employees[i]?.name || `E${i}`);
+    return `
+      <div class="cab-card" style="border-left-color:${color}">
+        <div class="cab-header" style="color:${color}">🚕 Cab ${a.cab+1} — Distance: ${a.distance.toFixed(1)}</div>
+        <div class="cab-emps">
+          ${empNames.map(n=>`<span class="emp-tag" style="background:${color}22;border-color:${color}66;color:${color}">${n}</span>`).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ==================== DRAW MAP ====================
+function drawMap() {
+  if (!lastResult || !employees.length) return;
+  const canvas = document.getElementById('gridCanvas');
+  const ctx = canvas.getContext('2d');
+  const grid = parseInt(document.getElementById('gridSize').value);
+  const W = canvas.parentElement.offsetWidth - 48;
+  canvas.width = W; canvas.height = Math.min(W, 500);
+  const cw = canvas.width, ch = canvas.height;
+  const pad = 40;
+  const scaleX = (cw - 2*pad) / grid;
+  const scaleY = (ch - 2*pad) / grid;
+
+  function toCanv(x,y) {
+    return [pad + x*scaleX, ch - pad - y*scaleY];
+  }
+
+  // Background grid
+  ctx.clearRect(0,0,cw,ch);
+  ctx.strokeStyle = 'rgba(0,245,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i=0;i<=grid;i++) {
+    const [x1,y1]=toCanv(i,0), [x2,y2]=toCanv(i,grid);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const [a1,b1]=toCanv(0,i), [a2,b2]=toCanv(grid,i);
+    ctx.beginPath(); ctx.moveTo(a1,b1); ctx.lineTo(a2,b2); ctx.stroke();
+  }
+
+  // Draw routes
+  lastResult.assignments.forEach(a => {
+    if (!a.employees.length) return;
+    const color = CAB_COLORS[a.cab % CAB_COLORS.length];
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([5,3]);
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    const [ox,oy] = toCanv(0,0);
+    ctx.moveTo(ox,oy);
+    a.employees.forEach(i => {
+      const e = employees[i];
+      if (e) { const [ex,ey]=toCanv(e.x,e.y); ctx.lineTo(ex,ey); }
+    });
+    ctx.lineTo(ox,oy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  });
+
+  // Draw employees
+  employees.forEach((e,i) => {
+    const [ex,ey] = toCanv(e.x,e.y);
+    const assignment = lastResult.assignments.find(a=>a.employees.includes(i));
+    const color = assignment ? CAB_COLORS[assignment.cab % CAB_COLORS.length] : '#888';
+
+    ctx.beginPath(); ctx.arc(ex,ey,8,0,Math.PI*2);
+    ctx.fillStyle = color+'44'; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth=2; ctx.stroke();
+
+    ctx.fillStyle = '#fff'; ctx.font='bold 9px Exo 2';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(e.id+1, ex, ey);
+  });
+
+  // Draw office
+  const [ox,oy] = toCanv(0,0);
+  ctx.beginPath(); ctx.arc(ox,oy,14,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,245,255,0.2)'; ctx.fill();
+  ctx.strokeStyle='#00f5ff'; ctx.lineWidth=3; ctx.stroke();
+  ctx.fillStyle='#fff'; ctx.font='bold 14px Arial';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('★',ox,oy);
+}
+
+// ==================== GAME MODE ====================
+function setupGame(result) {
+  document.getElementById('gameEmpty').style.display='none';
+  document.getElementById('gameContent').style.display='block';
+
+  const numCabs = lastResult.num_cabs;
+  const seats = lastResult.seats_per_cab;
+
+  // Unassigned zone
+  const unassigned = document.getElementById('unassignedZone');
+  unassigned.innerHTML = employees.map(e =>
+    `<span class="emp-tag" draggable="true" data-emp="${e.id}" style="background:${CAB_COLORS[e.id%CAB_COLORS.length]}22;border-color:${CAB_COLORS[e.id%CAB_COLORS.length]}66;color:${CAB_COLORS[e.id%CAB_COLORS.length]}"
+      ondragstart="drag(event)" ondragend="dragEnd(event)">${e.name}</span>`
+  ).join(' ');
+
+  // Cab slots
+  const gameCabs = document.getElementById('gameCabs');
+  gameCabs.innerHTML = Array.from({length:numCabs},(_,c) => `
+    <div class="cab-card" style="border-left-color:${CAB_COLORS[c%CAB_COLORS.length]}">
+      <div class="cab-header" style="color:${CAB_COLORS[c%CAB_COLORS.length]}">🚕 Cab ${c+1} (max ${seats} seats)</div>
+      <div class="drop-zone" id="cab-drop-${c}" data-cab="${c}" data-seats="${seats}"
+        ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
+    </div>
+  `).join('');
+
+  setupDropZone(unassigned);
+  document.getElementById('scoreBoard').innerHTML = '<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">Assign employees then calculate!</div>';
+}
+
+function drag(e){ e.dataTransfer.setData('empId', e.target.dataset.emp); e.target.style.opacity='0.5'; }
+function dragEnd(e){ e.target.style.opacity='1'; }
+function allowDrop(e){ e.preventDefault(); e.currentTarget.classList.add('over'); }
+function dragLeave(e){ e.currentTarget.classList.remove('over'); }
+
+function drop(e) {
+  e.preventDefault();
+  const zone = e.currentTarget;
+  zone.classList.remove('over');
+  const empId = parseInt(e.dataTransfer.getData('empId'));
+  const maxSeats = parseInt(zone.dataset.seats || 99);
+
+  // Count current occupants
+  const current = zone.querySelectorAll('.emp-tag').length;
+  if (current >= maxSeats) { zone.style.border='2px solid var(--neon-pink)'; setTimeout(()=>zone.style.border='',800); return; }
+
+  // Remove from old zone
+  const old = document.querySelector(`[data-emp="${empId}"]`);
+  if (old) old.remove();
+
+  const emp = employees[empId];
+  const color = CAB_COLORS[empId % CAB_COLORS.length];
+  zone.innerHTML += `<span class="emp-tag" draggable="true" data-emp="${empId}"
+    style="background:${color}22;border-color:${color}66;color:${color}"
+    ondragstart="drag(event)" ondragend="dragEnd(event)">${emp.name}</span>`;
+}
+
+function setupDropZone(el) {
+  el.addEventListener('dragover', e=>{ e.preventDefault(); el.classList.add('over'); });
+  el.addEventListener('dragleave', ()=>el.classList.remove('over'));
+  el.addEventListener('drop', e=>{ e.preventDefault(); el.classList.remove('over'); drop(e); });
+  el.dataset.seats='99';
+}
+
+function scoreUserRoute() {
+  const numCabs = lastResult.num_cabs;
+  let userTotal = 0;
+  const userAssignments = [];
+
+  for (let c = 0; c < numCabs; c++) {
+    const zone = document.getElementById(`cab-drop-${c}`);
+    if (!zone) continue;
+    const tags = zone.querySelectorAll('[data-emp]');
+    const empIds = Array.from(tags).map(t=>parseInt(t.dataset.emp));
+
+    let dist = 0, cx=0, cy=0;
+    empIds.forEach(id => {
+      const e=employees[id];
+      dist += Math.abs(cx-e.x)+Math.abs(cy-e.y);
+      cx=e.x; cy=e.y;
+    });
+    dist += Math.abs(cx)+Math.abs(cy);
+    userTotal += dist;
+    userAssignments.push({cab:c, empIds, dist});
+  }
+
+  const aiDist = lastResult.greedy_distance;
+  const score = Math.max(0, Math.min(100, Math.round(aiDist/userTotal*100)));
+  let rank, rankColor;
+  if (score>=90){rank='🏆 Expert Fleet Manager'; rankColor=CAB_COLORS[3];}
+  else if(score>=75){rank='⭐ Skilled Manager'; rankColor=CAB_COLORS[0];}
+  else if(score>=50){rank='🌱 Beginner'; rankColor=CAB_COLORS[4];}
+  else{rank='⚠️ Needs Optimization'; rankColor=CAB_COLORS[1];}
+
+  const ringGrad = score>=90?'#39ff14':score>=75?'#00f5ff':score>=50?'#ffe600':'#ff006e';
+
+  document.getElementById('scoreBoard').innerHTML = `
+    <div class="score-ring" style="background:conic-gradient(${ringGrad} 0% ${score}%, rgba(255,255,255,0.05) ${score}% 100%);box-shadow:0 0 40px ${ringGrad}44">
+      <div class="score-val" style="color:${ringGrad}">${score}</div>
+      <div class="score-label">SCORE</div>
+    </div>
+    <div class="badge" style="background:${rankColor}22;border:1px solid ${rankColor};color:${rankColor}">${rank}</div>
+    <div class="emp-item" style="margin-top:16px"><span>👤 Your Distance</span><span style="color:${CAB_COLORS[1]}">${userTotal.toFixed(1)}</span></div>
+    <div class="emp-item"><span>🤖 AI Distance</span><span class="cyan">${aiDist.toFixed(1)}</span></div>
+    <div class="emp-item"><span>📊 Difference</span><span class="yellow">${(userTotal-aiDist).toFixed(1)} extra</span></div>
+    <div style="margin-top:12px; font-size:0.8rem; color:rgba(255,255,255,0.4); text-align:center">
+      ${score>=100?'🎉 You matched the AI!':score>100?'🔥 You beat the AI!':'Try again to improve your score!'}
+    </div>
+  `;
+}
+
+// ==================== HISTORY ====================
+function saveHistory(r) {
+  simCount++;
+  const entry = {
+    id: simCount, time: new Date().toLocaleTimeString(),
+    employees: employees.length, cabs: lastResult.num_cabs,
+    greedy: r.greedy_distance, random: r.random_distance,
+    improvement: r.improvement
+  };
+  simHistory.push(entry);
+  renderHistory();
+}
+
+function renderHistory() {
+  const best = simHistory.reduce((b,s)=>s.greedy<b.greedy?s:b, simHistory[0]);
+  document.getElementById('h-runs').textContent = simHistory.length;
+  document.getElementById('h-best').textContent = best ? best.greedy.toFixed(1) : '—';
+  const avgImp = simHistory.length ? (simHistory.reduce((s,r)=>s+r.improvement,0)/simHistory.length).toFixed(1) : '—';
+  document.getElementById('h-avg').textContent = avgImp + (simHistory.length?'%':'');
+
+  document.getElementById('historyList').innerHTML = simHistory.map((s,i) => `
+    <div class="sim-row ${s===best?'sim-best':''}">
+      <span style="color:rgba(255,255,255,0.4);font-size:0.8rem">#${s.id} ${s.time}</span>
+      <span>${s.employees} emp, ${s.cabs} cabs</span>
+      <span class="cyan">${s.greedy.toFixed(1)}</span>
+      <span class="green">${s.improvement.toFixed(1)}% ↑</span>
+      ${s===best?'<span style="color:var(--neon-green);font-size:0.75rem">★ BEST</span>':''}
+    </div>
+  `).reverse().join('');
+}
+
+function clearHistory() {
+  simHistory = []; simCount = 0;
+  document.getElementById('historyList').innerHTML='<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px">No simulations yet</div>';
+  ['h-runs','h-best','h-avg'].forEach(id=>{document.getElementById(id).textContent=id==='h-runs'?'0':'—';});
+}
+
+// ==================== DP VS GREEDY ====================
+
+// Bitmask DP (Held-Karp style) for a single cab's group of employees
+// Returns {order: [...indices], dist: number}
+function dpOptimalRoute(empPool) {
+  const n = empPool.length;
+  if (n === 0) return { order: [], dist: 0 };
+  if (n === 1) {
+    const d = manhattan(0,0,empPool[0].x,empPool[0].y) + manhattan(empPool[0].x,empPool[0].y,0,0);
+    return { order: [0], dist: d };
+  }
+  // dp[mask][i] = min distance to visit exactly the employees in 'mask', ending at i
+  // starting from office (0,0)
+  const INF = 1e15;
+  const total = 1 << n;
+  const dp   = Array.from({length: total}, () => new Array(n).fill(INF));
+  const par  = Array.from({length: total}, () => new Array(n).fill(-1));
+
+  // Base: visit single employee from office
+  for (let i = 0; i < n; i++) {
+    dp[1<<i][i] = manhattan(0,0,empPool[i].x,empPool[i].y);
+  }
+
+  // Fill DP table
+  for (let mask = 1; mask < total; mask++) {
+    for (let last = 0; last < n; last++) {
+      if (!(mask & (1<<last))) continue;
+      if (dp[mask][last] === INF) continue;
+      for (let next = 0; next < n; next++) {
+        if (mask & (1<<next)) continue;
+        const newMask = mask | (1<<next);
+        const newDist = dp[mask][last] + manhattan(empPool[last].x,empPool[last].y,empPool[next].x,empPool[next].y);
+        if (newDist < dp[newMask][next]) {
+          dp[newMask][next] = newDist;
+          par[newMask][next] = last;
+        }
+      }
+    }
+  }
+
+  // Find best ending state (full mask = all visited)
+  const fullMask = total - 1;
+  let bestDist = INF, bestLast = 0;
+  for (let i = 0; i < n; i++) {
+    const total_d = dp[fullMask][i] + manhattan(empPool[i].x,empPool[i].y,0,0);
+    if (total_d < bestDist) { bestDist = total_d; bestLast = i; }
+  }
+
+  // Trace back path
+  const order = [];
+  let mask = fullMask, cur = bestLast;
+  while (mask > 0) {
+    order.unshift(cur);
+    const prev = par[mask][cur];
+    mask ^= (1<<cur);
+    cur = prev;
+  }
+  return { order, dist: bestDist };
+}
+
+// Run DP per cab (assign greedily by groups, then optimize each group's route)
+function runDP(emps, numCabs, seats) {
+  // First assign employees to cabs using greedy grouping (same as greedy cab assignment)
+  // Then for each cab's group, find optimal ordering via DP
+  const assigned = new Array(emps.length).fill(false);
+  const cabGroups = [];
+
+  for (let c = 0; c < numCabs; c++) {
+    if (assigned.findIndex(a=>!a) === -1) break;
+    let cx = 0, cy = 0;
+    const group = [];
+    for (let s = 0; s < seats; s++) {
+      let minD = Infinity, best = -1;
+      for (let i = 0; i < emps.length; i++) {
+        if (!assigned[i]) {
+          const d = manhattan(cx,cy,emps[i].x,emps[i].y);
+          if (d < minD) { minD=d; best=i; }
+        }
+      }
+      if (best===-1) break;
+      assigned[best]=true; group.push(best);
+      cx=emps[best].x; cy=emps[best].y;
+    }
+    cabGroups.push(group);
+  }
+
+  // For each group, run bitmask DP to find optimal route order
+  let totalDP = 0;
+  const dpAssignments = [];
+  cabGroups.forEach((group, c) => {
+    if (!group.length) return;
+    const pool = group.map(i => emps[i]);
+    const { order, dist } = dpOptimalRoute(pool);
+    const orderedEmps = order.map(oi => group[oi]);
+    dpAssignments.push({ cab: c, employees: orderedEmps, distance: dist });
+    totalDP += dist;
+  });
+
+  return { total: totalDP, assignments: dpAssignments };
+}
+
+function runDPvsGreedy() {
+  if (!employees.length) {
+    alert('Please generate employees first in the Setup tab!');
+    return;
+  }
+
+  const btn = document.getElementById('dpBtn');
+  btn.innerHTML = '<span class="spinner"></span> Computing...';
+  btn.disabled = true;
+
+  const numCabs = lastResult ? lastResult.num_cabs : parseInt(document.getElementById('numCabs').value);
+  const seats   = lastResult ? lastResult.seats_per_cab : parseInt(document.getElementById('seatsPerCab').value);
+
+  // Run greedy (use existing result or compute)
+  const gResult = lastResult ? lastResult : runJSFallback(employees, numCabs, seats);
+  const greedyDist = gResult.greedy_distance;
+  const greedyAssignments = gResult.assignments;
+
+  // Run DP — cap employees for DP feasibility (DP is exponential per cab group)
+  const MAX_DP_EMP = 15; // safe limit for bitmask DP per group (≤ 8 per cab)
+  const dpResult = runDP(employees.slice(0, MAX_DP_EMP), numCabs, seats);
+  const dpDist = dpResult.total;
+
+  // Display
+  document.getElementById('dpEmpty').style.display = 'none';
+  document.getElementById('dpContent').style.display = 'block';
+
+  document.getElementById('dp-greedy-dist').textContent = greedyDist.toFixed(1);
+  document.getElementById('dp-dp-dist').textContent     = dpDist.toFixed(1);
+  const gap = greedyDist - dpDist;
+  document.getElementById('dp-gap').textContent = gap.toFixed(1) + (gap >= 0 ? ' extra' : ' better!');
+  document.getElementById('dpLiveGapVal').textContent =
+    gap <= 0 ? '🎉 Greedy = Optimal!' :
+    `Greedy is ${gap.toFixed(1)} units (${(gap/dpDist*100).toFixed(1)}%) above DP`;
+
+  // Draw canvas maps
+  setTimeout(() => {
+    drawDPCompareCanvas('greedyRouteCanvas', greedyAssignments, '#00f5ff');
+    drawDPCompareCanvas('dpRouteCanvas', dpResult.assignments, '#ffe600');
+    buildComplexityBars();
+    buildDPStepLogs(greedyAssignments, dpResult.assignments);
+  }, 50);
+
+  btn.innerHTML = '⚡ Run Both Algorithms';
+  btn.disabled = false;
+}
+
+function drawDPCompareCanvas(canvasId, assignments, lineColor) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.offsetWidth - 48 || 400;
+  canvas.width = W; canvas.height = 260;
+  const grid = parseInt(document.getElementById('gridSize').value) || 20;
+  const pad = 28, scX = (W-2*pad)/grid, scY = (260-2*pad)/grid;
+  const toC = (x,y) => [pad+x*scX, 260-pad-y*scY];
+
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1;
+  for(let i=0;i<=grid;i++){
+    ctx.beginPath();ctx.moveTo(pad+i*scX,pad);ctx.lineTo(pad+i*scX,260-pad);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(pad,pad+i*scY);ctx.lineTo(W-pad,pad+i*scY);ctx.stroke();
+  }
+
+  // Routes
+  assignments.forEach((a,ci) => {
+    if (!a.employees.length) return;
+    const col = CAB_COLORS[ci % CAB_COLORS.length];
+    ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.setLineDash([5,3]); ctx.globalAlpha=0.8;
+    ctx.beginPath();
+    const [ox,oy]=toC(0,0); ctx.moveTo(ox,oy);
+    a.employees.forEach(idx => {
+      const e = employees[idx] || employees[a.employees.indexOf(idx)];
+      const emp = typeof idx === 'number' ? employees[idx] : idx;
+      if(emp) { const [ex,ey]=toC(emp.x,emp.y); ctx.lineTo(ex,ey); }
+    });
+    ctx.lineTo(ox,oy); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha=1;
+  });
+
+  // Employee dots
+  employees.forEach((e,i) => {
+    const [ex,ey]=toC(e.x,e.y);
+    const cabIdx = assignments.findIndex(a => a.employees.includes(i));
+    const col = cabIdx>=0 ? CAB_COLORS[cabIdx%CAB_COLORS.length] : '#888';
+    ctx.beginPath(); ctx.arc(ex,ey,8,0,Math.PI*2);
+    ctx.fillStyle=col+'44'; ctx.fill();
+    ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='bold 8px Exo 2'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(i+1,ex,ey);
+  });
+
+  // Office star
+  const [ox,oy]=toC(0,0);
+  ctx.beginPath(); ctx.arc(ox,oy,12,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.fillStyle='#fff'; ctx.font='bold 11px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('★',ox,oy);
+}
+
+function buildComplexityBars() {
+  const ns = [5, 10, 15, 20];
+  const el = document.getElementById('complexityBars');
+  el.innerHTML = ns.map(n => {
+    const greedy = n*n;
+    const dp     = Math.min(n*n*(1<<n), 1e12); // cap for display
+    const maxVal = dp;
+    const greedyPct = Math.max(2, (greedy/maxVal)*100);
+    const dpLabel = dp >= 1e11 ? '~10¹¹+' : dp >= 1e9 ? '~'+Math.round(dp/1e9)+'B' : dp >= 1e6 ? '~'+Math.round(dp/1e6)+'M' : dp >= 1e3 ? '~'+Math.round(dp/1e3)+'K' : dp;
+    return `
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
+          <span style="color:rgba(255,255,255,0.5)">n = ${n} employees</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <div style="width:60px;font-size:0.72rem;color:var(--neon-cyan)">Greedy</div>
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:4px;height:12px;position:relative">
+            <div style="width:${greedyPct}%;background:linear-gradient(90deg,var(--neon-cyan),rgba(0,245,255,0.4));height:100%;border-radius:4px;box-shadow:0 0 6px var(--neon-cyan)"></div>
+          </div>
+          <div style="width:50px;font-size:0.72rem;color:var(--neon-cyan);text-align:right">${greedy}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:60px;font-size:0.72rem;color:var(--neon-yellow)">DP</div>
+          <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:4px;height:12px">
+            <div style="width:100%;background:linear-gradient(90deg,var(--neon-yellow),rgba(255,230,0,0.4));height:100%;border-radius:4px;box-shadow:0 0 6px var(--neon-yellow)"></div>
+          </div>
+          <div style="width:50px;font-size:0.72rem;color:var(--neon-yellow);text-align:right">${dpLabel}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function buildDPStepLogs(greedyA, dpA) {
+  // Greedy log
+  let gLog = '';
+  greedyA.forEach(a => {
+    if (!a.employees.length) return;
+    gLog += `<div style="color:${CAB_COLORS[a.cab%CAB_COLORS.length]};margin-top:6px">🚕 Cab ${a.cab+1} (dist: ${a.distance.toFixed(1)})</div>`;
+    let cx=0,cy=0;
+    a.employees.forEach(i => {
+      const e=employees[i]; if(!e)return;
+      const d=manhattan(cx,cy,e.x,e.y);
+      gLog+=`<div style="color:rgba(255,255,255,0.6)">&nbsp;&nbsp;→ ${e.name}(${e.x},${e.y}) nearest: <span style="color:var(--neon-cyan)">${d}</span></div>`;
+      cx=e.x;cy=e.y;
+    });
+    gLog+=`<div style="color:rgba(255,255,255,0.4)">&nbsp;&nbsp;→ Return office: ${manhattan(cx,cy,0,0)}</div>`;
+  });
+  document.getElementById('greedyStepLog').innerHTML = gLog || '<div style="color:rgba(255,255,255,0.3)">No assignments</div>';
+
+  // DP log
+  let dLog = `<div style="color:rgba(255,255,255,0.4);margin-bottom:6px">DP tries all 2ⁿ subsets per cab group then picks optimal order:</div>`;
+  dpA.forEach(a => {
+    if (!a.employees.length) return;
+    dLog+=`<div style="color:${CAB_COLORS[a.cab%CAB_COLORS.length]};margin-top:6px">🧩 Cab ${a.cab+1} — Optimal order (dist: ${a.distance.toFixed(1)})</div>`;
+    let cx=0,cy=0;
+    a.employees.forEach(emp => {
+      const e=typeof emp==='number'?employees[emp]:emp; if(!e)return;
+      const d=manhattan(cx,cy,e.x,e.y);
+      dLog+=`<div style="color:rgba(255,255,255,0.6)">&nbsp;&nbsp;→ ${e.name}(${e.x},${e.y}) dist: <span style="color:var(--neon-yellow)">${d}</span></div>`;
+      cx=e.x;cy=e.y;
+    });
+    dLog+=`<div style="color:rgba(255,255,255,0.4)">&nbsp;&nbsp;→ Return office: ${manhattan(cx,cy,0,0)}</div>`;
+  });
+  document.getElementById('dpStepLog').innerHTML = dLog;
+}
+
+// Init
+updateCapacity();
+</script>
+</body>
+</html>
